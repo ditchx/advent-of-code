@@ -5,8 +5,21 @@ import (
 	"fmt"
 	"os"
 	"strconv"
+	"strings"
 	"unicode"
 )
+
+var numWords = map[string]rune{
+	"one":   '1',
+	"two":   '2',
+	"three": '3',
+	"four":  '4',
+	"five":  '5',
+	"six":   '6',
+	"seven": '7',
+	"eight": '8',
+	"nine":  '9',
+}
 
 func main() {
 	inputFile := os.Args[1]
@@ -30,11 +43,20 @@ func calibrationValue(line []byte) uint64 {
 	length := len(line)
 
 	for ct := 0; ct < length; ct++ {
-		if unicode.IsDigit(rune(line[ct])) && a == 0 {
-			a = rune(line[ct])
+		if a == 0 {
+			if unicode.IsDigit(rune(line[ct])) {
+				a = rune(line[ct])
+
+			} else if num := numberWord(line[ct:]); num != 0 {
+				a = num
+			}
 		}
-		if unicode.IsDigit(rune(line[length-ct-1])) && b == 0 {
-			b = rune(line[length-ct-1])
+		if b == 0 {
+			if unicode.IsDigit(rune(line[length-ct-1])) {
+				b = rune(line[length-ct-1])
+			} else if num := numberWord(line[length-ct-1:]); num != 0 {
+				b = num
+			}
 		}
 
 		if a != 0 && b != 0 {
@@ -42,6 +64,19 @@ func calibrationValue(line []byte) uint64 {
 		}
 	}
 	value, _ := strconv.ParseUint(string(a)+string(b), 10, 32)
-	fmt.Println(value)
 	return value
+}
+
+func numberWord(line []byte) rune {
+	var found rune
+
+	s := string(line)
+
+	for k, v := range numWords {
+		if strings.HasPrefix(s, k) {
+			return v
+		}
+	}
+
+	return found
 }
