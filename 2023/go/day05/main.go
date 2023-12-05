@@ -109,8 +109,16 @@ func main() {
 
 	}
 
-	var location uint64 = 0
+	var location = puzzle1(almanac, mappingTypes, seeds)
+	fmt.Println(location)
 
+	location = puzzle2(almanac, mappingTypes, seeds)
+	fmt.Println(location)
+
+}
+
+func puzzle1(almanac map[string]*AlmanacMap, mappingTypes []string, seeds []uint64) uint64 {
+	var location uint64 = 0
 	for i, seed := range seeds {
 		l := seed
 		for _, mapType := range mappingTypes {
@@ -127,6 +135,55 @@ func main() {
 		}
 	}
 
-	fmt.Println(location)
+	return location
+}
 
+// Brute-force! lol
+// @TODO: Optimize or think of a different approach
+func puzzle2(almanac map[string]*AlmanacMap, mappingTypes []string, seeds []uint64) uint64 {
+	var lowest uint64
+
+	c := make(chan uint64)
+	var rangeCount int = len(seeds) / 2
+
+	for ct := 0; ct < len(seeds); ct = ct + 2 {
+
+		go func(start, end uint64) {
+			var init bool = false
+			var location uint64 = 0
+
+			for start < end {
+
+				l := start
+				start++
+				for _, mapType := range mappingTypes {
+					l = almanac[mapType].Map(l)
+				}
+
+				if !init {
+					location = l
+					init = true
+					continue
+				}
+
+				if location >= l {
+					location = l
+				}
+
+			}
+			c <- location
+		}(seeds[ct], seeds[ct]+seeds[ct+1])
+	}
+
+	for ct := 0; ct < rangeCount; ct++ {
+		l := <-c
+		if ct == 0 {
+			lowest = l
+		}
+		if lowest >= l {
+			lowest = l
+		}
+	}
+
+	return lowest
 }
