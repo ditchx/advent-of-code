@@ -19,13 +19,27 @@ func main() {
 			readings = append(readings, v)
 		}
 
-		extrapolated += extrapolate(readings)
+		extrapolated += extrapolate(readings, true)
 	}
 
 	fmt.Println(extrapolated)
+
+	extrapolated = 0
+	for _, line := range contents {
+		readings := make([]int64, 0)
+		for _, value := range strings.Fields(line) {
+			v, _ := strconv.ParseInt(value, 10, 32)
+			readings = append(readings, v)
+		}
+
+		extrapolated += extrapolate(readings, false)
+	}
+
+	fmt.Println(extrapolated)
+
 }
 
-func extrapolate(readings []int64) int64 {
+func extrapolate(readings []int64, forward bool) int64 {
 
 	intervals := make([]int64, 0)
 
@@ -38,10 +52,16 @@ func extrapolate(readings []int64) int64 {
 
 	if len(keys) == 1 {
 		for k := range keys {
-			return readings[len(readings)-1] + k
+			if forward {
+				return readings[len(readings)-1] + k
+			}
+			return readings[0] - k
 		}
 	}
 
-	return readings[len(readings)-1] + extrapolate(intervals)
+	if forward {
+		return readings[len(readings)-1] + extrapolate(intervals, forward)
+	}
+	return readings[0] - extrapolate(intervals, forward)
 
 }
