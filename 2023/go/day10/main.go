@@ -150,11 +150,16 @@ func main() {
 	}
 
 	passed := make(map[string]uint64)
+	pipe := make(map[string]struct{})
+	pipe[fmt.Sprintf("%d_%d", startRow, startColumn)] = struct{}{}
 
 	var greatest uint64
 	for ct := 0; ct < (rowCount * columnCount); ct++ {
 		res1 := paths[0].Next(maze)
 		res2 := paths[1].Next(maze)
+
+		pipe[res1] = struct{}{}
+		pipe[res2] = struct{}{}
 
 		_, ok := passed[res1]
 		if res1 == res2 && !ok && res1 != fmt.Sprintf("%d_%d", startRow, startColumn) {
@@ -166,4 +171,30 @@ func main() {
 
 	fmt.Println(greatest)
 
+	passed[fmt.Sprintf("%d_%d", startRow, startColumn)] = 0
+
+	// Ray-polygon intersection
+	var enclosed uint64
+	for i := 0; i < rowCount; i++ {
+		for j := 0; j < columnCount; j++ {
+			if _, inPipe := pipe[fmt.Sprintf("%d_%d", i, j)]; !inPipe {
+				var crossings uint64
+				for next := j + 1; next < columnCount; next++ {
+
+					if _, partOfPipe := pipe[fmt.Sprintf("%d_%d", i, next)]; !partOfPipe {
+						continue
+					}
+
+					if strings.IndexRune("J|L", maze[i][next]) != -1 {
+						crossings++
+					}
+				}
+				if crossings%2 == 1 {
+					enclosed++
+				}
+			}
+		}
+	}
+
+	fmt.Println(enclosed)
 }
