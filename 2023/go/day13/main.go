@@ -11,10 +11,34 @@ func main() {
 	contents := strings.Split(strings.TrimSpace(string(file)), "\n\n")
 
 	var total uint64
+	smudged := false
+
+	original := make(map[string][2]uint64)
 	for _, c := range contents {
 
-		v := vertical(c)
-		h := horizontal(c)
+		v := vertical(c, smudged)
+		h := horizontal(c, smudged)
+
+		original[c] = [2]uint64{v, h}
+		total = total + v + h
+	}
+
+	fmt.Println(total)
+
+	total = 0
+	smudged = true
+	for _, c := range contents {
+
+		v := vertical(c, smudged)
+		h := horizontal(c, smudged)
+
+		if original[c][0] == v && original[c][1] != h {
+			v = 0
+		}
+
+		if original[c][0] != v && original[c][1] == h {
+			h = 0
+		}
 
 		total = total + v + h
 	}
@@ -22,7 +46,7 @@ func main() {
 	fmt.Println(total)
 }
 
-func vertical(data string) uint64 {
+func vertical(data string, smudged bool) uint64 {
 	var value uint64
 	lines := strings.Split(data, "\n")
 	canditates := make(map[int]uint)
@@ -63,7 +87,7 @@ func vertical(data string) uint64 {
 					canditates[index]++
 
 					if len(lines) == int(canditates[index]) {
-						return uint64(index)
+						value = uint64(index)
 					}
 				}
 
@@ -76,11 +100,18 @@ func vertical(data string) uint64 {
 		}
 	}
 
-	return value
+	if smudged {
+		for k, v := range canditates {
+			if int(v) == len(lines)-1 {
+				return uint64(k)
+			}
+		}
+	}
 
+	return value
 }
 
-func horizontal(data string) uint64 {
+func horizontal(data string, smudged bool) uint64 {
 	var value uint64
 	lines := strings.Split(data, "\n")
 	canditates := make(map[int]uint)
@@ -122,7 +153,7 @@ func horizontal(data string) uint64 {
 					canditates[index]++
 
 					if len(lines[0]) == int(canditates[index]) {
-						return uint64(index * 100)
+						value = uint64(index * 100)
 					}
 
 				}
@@ -136,5 +167,14 @@ func horizontal(data string) uint64 {
 		}
 	}
 
+	if smudged {
+		for k, v := range canditates {
+			if int(v) == len(lines[0])-1 {
+				return uint64(k * 100)
+			}
+		}
+	}
+
 	return value
+
 }
