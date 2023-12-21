@@ -2,45 +2,28 @@ package main
 
 import (
 	"fmt"
+	"maps"
 	"os"
 	"strconv"
 	"strings"
 )
 
 func main() {
+
 	file, _ := os.ReadFile(os.Args[1])
 	contents := strings.Split(strings.TrimSpace(string(file)), "\n")
 
 	var total uint64
 
 	for i := range contents {
-		x := countCombinations(contents[i])
+		x := countArrangements(contents[i])
 		total = total + x
 	}
 
 	fmt.Println(total)
-
 }
 
-func validate(pattern string, repetitions []uint8) bool {
-	pattern = strings.Trim(pattern, ".")
-	check := strings.FieldsFunc(pattern, func(c rune) bool { return '#' != c })
-
-	if len(check) != len(repetitions) {
-		return false
-	}
-
-	for i := range check {
-		if len(check[i]) != int(repetitions[i]) {
-			return false
-		}
-	}
-
-	return true
-}
-
-func countCombinations(data string) uint64 {
-	var total uint64
+func countArrangements(data string) uint64 {
 
 	parts := strings.Fields(data)
 
@@ -51,53 +34,97 @@ func countCombinations(data string) uint64 {
 		repetitions = append(repetitions, uint8(ct))
 	}
 
-	combinations := expand(parts[0])
+	arrangements := make(map[string]uint8)
 
-	for i := range combinations {
-		if validate(combinations[i], repetitions) {
+	getArrangements(arrangements, []rune(parts[0]), repetitions)
+
+	var total uint64
+
+	for i := range arrangements {
+		if arrangements[i] == 2 {
 			total++
 		}
-
 	}
 
 	return total
 }
 
-func expand(pattern string) []string {
-	combinations := make([]string, 0)
-	qCount := strings.Count(pattern, "?")
+func getArrangements(arrangements map[string]uint8, chars []rune, repetitions []uint8) {
 
-	if qCount == 0 {
-		return []string{pattern}
-	}
-
-	for _, v := range generatePermutations([]string{".", "#"}, qCount) {
-		combinations = append(combinations, substitute(pattern, v))
-	}
-
-	return combinations
-}
-
-func substitute(pattern string, combination string) string {
-	for i := range combination {
-		pattern = strings.Replace(pattern, "?", string(combination[i]), 1)
-	}
-
-	return pattern
-}
-
-func generatePermutations(pool []string, length int) []string {
-	var result []string
-	generatePermutationsRecursive(pool, length, "", &result)
-	return result
-}
-
-func generatePermutationsRecursive(pool []string, length int, current string, result *[]string) {
-	if length == 0 {
-		*result = append(*result, current)
+	if len(chars) == 0 {
 		return
 	}
-	for _, letter := range pool {
-		generatePermutationsRecursive(pool, length-1, current+letter, result)
+
+	var next []string
+	if '?' == chars[0] {
+		next = []string{"#", "."}
+	} else {
+		next = []string{string(chars[0])}
 	}
+
+	if len(arrangements) == 0 {
+		for i := range next {
+			if ok := check(next[i], repetitions); ok > 0 {
+				arrangements[next[i]] = ok
+			}
+		}
+
+		getArrangements(arrangements, chars[1:], repetitions)
+		return
+	}
+
+	batch := make(map[string]uint8, 0)
+	for pattern := range arrangements {
+		for k := range next {
+			current := pattern + next[k]
+			if ok := check(current, repetitions); ok > 0 {
+				batch[current] = ok
+			}
+		}
+		delete(arrangements, pattern)
+	}
+
+	maps.Copy(arrangements, batch)
+	getArrangements(arrangements, chars[1:], repetitions)
+
+}
+
+func check(pattern string, repetitions []uint8) uint8 {
+	pattern = strings.Trim(pattern, ".")
+	check := strings.FieldsFunc(pattern, func(c rune) bool { return '#' != c })
+
+	less := false
+
+	if len(check) > len(repetitions) {
+		return 0
+	}
+
+	for i := range check {
+		if len(check[i]) > int(repetitions[i]) {
+			return 0
+		}
+
+		if len(check[i]) < int(repetitions[i]) {
+			if less {
+				return 0
+			}
+
+			less = true
+		}
+
+		if less && len(check[i]) == int(repetitions[i]) {
+			return 0
+		}
+
+	}
+
+	if less {
+		return 1
+	}
+
+	if len(check) < len(repetitions) {
+		return 1
+	}
+
+	return 2
 }
