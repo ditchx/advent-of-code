@@ -54,6 +54,50 @@ func main() {
 	beam(grid, tiles, initial)
 
 	fmt.Println(len(tiles))
+
+	var highest int
+
+	rightMost := len(grid[0]) - 1
+	bottomMost := len(grid) - 1
+	for i := 0; i < len(grid); i++ {
+		tiles = nil
+		tiles = make(map[string][]Ray)
+		initial := newRay(i, 0, right)
+		beam(grid, tiles, initial)
+
+		current := len(tiles)
+		highest = max(highest, current)
+
+		tiles = nil
+		tiles = make(map[string][]Ray)
+		initial = newRay(i, rightMost, left)
+		beam(grid, tiles, initial)
+
+		current = len(tiles)
+		highest = max(highest, current)
+
+	}
+
+	for i := 0; i < len(grid[0]); i++ {
+		tiles = nil
+		tiles = make(map[string][]Ray)
+		initial := newRay(0, i, down)
+		beam(grid, tiles, initial)
+
+		current := len(tiles)
+		highest = max(highest, current)
+
+		tiles = nil
+		tiles = make(map[string][]Ray)
+		initial = newRay(bottomMost, i, up)
+		beam(grid, tiles, initial)
+
+		current = len(tiles)
+		highest = max(highest, current)
+
+	}
+
+	fmt.Println(highest)
 }
 
 func beam(grid []string, tiles map[string][]Ray, r Ray) {
